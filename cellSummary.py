@@ -37,12 +37,25 @@ def getCoordsFromSVG(fileName):
     coords = np.vstack((np.array(X), np.array(Y))).T
     return coords, np.array(viewBox[1].split(' '), dtype='float')
 
+def getProjectDetails(path):
+    myDictionary = {}
+    file = open(path,"r")
+    for line in file:
+        fields = [x.replace(' ','').replace('\n','') for x in line.split(",")]
+        myDictionary[fields[0]]=fields[1:]
+    file.close()
+    print("\nProject Details:")
+    for i in myDictionary:
+        print("  ",i, myDictionary[i])
+    return myDictionary
+
 print('\nGenerating Summary')
 
 #Project's Experimental Set Up
-levels = ['23', '24', '25', '26', '27', '28', '29', '30']
-markers = ['aMSH','nNOS','MCH', 'HO', 'sMCH', 'asMSH', 'Copeptin']
-cases = ['17-020', '17-022', '17-024', '18-012', '18-014', '18-016', '20-005', '20-011', '20-012']
+projectDetails = getProjectDetails("projectDetails.csv")
+levels = projectDetails['levels']
+markers = projectDetails['markers']
+cases = projectDetails['cases']
 
 #Directory to Cell Body Data Set Up
 dataDir='../cells/raw/'
@@ -55,20 +68,21 @@ f.write("Summary report for cell bodies")
 f.close()
 
 #Generate summary file for cell bodies
+ids = len(markers)*len(cases)
 filled= 0
 empty = 0
 for marker in markers:
     for case in cases:
         for level in levels:
-             for i in ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18']:
+             for i in range(ids):#['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18']:
 
-                fileName = '%s%s_%s_lvl%s_%s-01.svg'%(dataDir,case,marker,level,i)
+                fileName = '%s%s_%s_lvl%s_%s-01.svg'%(dataDir,case,marker,level,i+1)
                 try:
                     coordinates, viewBox = getCoordsFromSVG(fileName)
                 except: continue
                 
                 f = open("../cells/summary.txt", "a")
-                f.write('\n\nFound: %s_%s_lvl%s_%s'%(case,marker,level,i))
+                f.write('\n\nFound: %s_%s_lvl%s_%s'%(case,marker,level,i+1))
                 f.write('\tNumber of Cells: %d'%len(coordinates))
                 f.close()
                 
