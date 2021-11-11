@@ -6,11 +6,9 @@ Created on Sun May 30 18:05:39 2021
 @author: latente
 """
 import os
-import re
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter
-from scipy.stats import multivariate_normal, gaussian_kde
 from matplotlib import cm
 from matplotlib.colors import ListedColormap
 from glob import glob
@@ -25,7 +23,7 @@ def newColorMap(oldCmap, nColors, reverse=False, opacity=True):
     return ListedColormap(newCmap)
 
 
-def contour1(im, filename, vmin, vmax, cmap):
+def contour(im, filename, vmin, vmax, cmap):
     #Determine where to draw contours (levels) – 1%, 5%, 10%, 20%, 40%, 60%,
     #   80% (and 100% when the density's maximum value is equal to vmax: a
     #   work around matplotlib.pyplot.contourf()'s 'color fill' and 'levels'
@@ -61,7 +59,6 @@ def contour1(im, filename, vmin, vmax, cmap):
 
 def fiberDensityMap(im, sigma):
     if np.max(im)==0: return im
-    #im = 1-(im-np.min(im))/(np.max(im)-np.min(im))
     print(im.dtype)
     return gaussian_filter(im,sigma)
 
@@ -79,25 +76,39 @@ def setUpFolders(directory):
     except:
         print('Directory %s already exist'%(directory+'contours'))
 
+def getProjectDetails(path):
+    myDictionary = {}
+    file = open(path,"r")
+    for line in file:
+        fields = [x.replace(' ','').replace('\n','') for x in line.split(",")]
+        myDictionary[fields[0]]=fields[1:]
+    file.close()
+    print("\nProject Details:")
+    for i in myDictionary:
+        print("  ",i, myDictionary[i])
+    return myDictionary
+
 #Project's Experimental Set Up
-levels = ['23', '24', '25', '26', '27', '28', '29', '30']
-markers = ['aMSH','nNOS','MCH', 'HO', 'sMCH', 'asMSH', 'Copeptin']
-cases = ['17-020', '17-022', '17-024', '18-012', '18-014', '18-016', '20-005', '20-011', '20-012']
+projectDetails = getProjectDetails("projectDetails.csv")
+levels = projectDetails['levels']
+markers = projectDetails['markers']
+cases = projectDetails['cases']
 
 #Directory to Fiber Data Set Up
 dataDir='../fibers/raw/'
 outDir ='../fibers/isopleths/'
 setUpFolders(outDir)
 
-#Generate density files for each SVG file
+#Generate density maps for each PNG file
+ids = len(markers)*len(cases)
 n=0
 sigma = 5
 for marker in markers:
     for level in levels:
         for case in cases:
-            for i in ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20']:#['01','02','03','04','05','06','07','08','09','10']:
+            for i in range(ids):
                 if os.path.isfile('%sdensities/%s_%s_lvl%s_%s.npy'%(outDir,case,marker,level,i)): continue
-                fileName = '%s%s_%s_lvl%s_%s.png'%(dataDir,case,marker,level,i)
+                fileName = '%s%s_%s_lvl%s_%s.png'%(dataDir,case,marker,level,i+1)
                 try:
                     im = (plt.imread(fileName)[:,:,0]<1).astype(np.float32)
                 except: continue
@@ -106,7 +117,7 @@ for marker in markers:
                 density = fiberDensityMap(im,sigma)
                 print('Im shape', density.shape)
                 print('Range:', np.min(density), np.max(density))
-                np.save('%sdensities/%s_%s_lvl%s-%s'%(outDir,case,marker,level,i),
+                np.save('%sdensities/%s_%s_lvl%s-%s'%(outDir,case,marker,level,i+1),
                         density)
         print('\n\n')
 print('\tFinished generating density maps for %d PNG files.'%n) 
@@ -135,8 +146,10 @@ for marker in markers:
         densities.append(density)
     for i, den in enumerate(densities):
         print('%s\t%s'%(np.max(den),peek))
-        contour1(den, '%scontours/%s_lvl%s_%s.svg'%(outDir, marker, levels[i], np.max(den)), 
+        contour(den, '%scontours/%s_lvl%s_%s.svg'%(outDir, marker, levels[i], np.max(den)), 
                 vmin = 0, vmax = peek, cmap = newColorMap('viridis', 1000, opacity=True, reverse=False))
         n+=1
 
 print('\n\tFinished generating %d contour files.'%n)    
+
+print("Done!")

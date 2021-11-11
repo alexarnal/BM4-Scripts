@@ -5,15 +5,8 @@ Created on Sun May 30 18:05:39 2021
 
 @author: latente
 """
-import os
-import re
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.ndimage import gaussian_filter
-from scipy.stats import multivariate_normal, gaussian_kde
-from matplotlib import cm
-from matplotlib.colors import ListedColormap
-from glob import glob
 
 def getProjectDetails(path):
     myDictionary = {}
@@ -52,7 +45,7 @@ empty = 0
 for marker in markers:
     for case in cases:
         for level in levels:
-             for i in range(ids):#['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18']:
+             for i in range(ids):
 
                 fileName = '%s%s_%s_lvl%s_%s.png'%(dataDir,case,marker,level,i+1)
                 try:
@@ -61,7 +54,7 @@ for marker in markers:
                 
                 f = open("../fibers/summary.txt", "a")
                 f.write('\n\nFound: %s_%s_lvl%s_%s'%(case,marker,level,i+1))
-                f.write('\tNumber of Fiber Pixels: %d'%np.sum(im))
+                f.write('\t\tNumber of Fiber Pixels: %d'%np.sum(im))
                 f.close()
 
                 if np.sum(im)==0: empty+=1
