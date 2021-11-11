@@ -67,7 +67,7 @@ for marker in markers:
                 if np.sum(im)==0: empty+=1
                 else: filled+=1
 
-f = open("../fibers/fiber_summary.txt", "a")
+f = open("../fibers/summary.txt", "a")
 f.write('\n\nThere is a total of %d fiber files:\n\t%d filled\n\t%d empty'%(filled+empty, filled, empty))
 f.write('\n\nEnd of report.')
 f.close()  
