@@ -12,14 +12,14 @@ def getProjectDetails(path):
     myDictionary = {}
     file = open(path,"r")
     for line in file:
-        fields = [x.replace(' ','').replace('\n','') for x in line.split(",")]
+        fields = [x.replace('\n','') for x in line.split(",")]
         myDictionary[fields[0]]=fields[1:]
     file.close()
     print("\nProject Details:")
     for i in myDictionary:
         print("  ",i, myDictionary[i])
     return myDictionary
-
+    
 print('\nGenerating Summary')
 
 #Project's Experimental Set Up
@@ -46,12 +46,10 @@ for marker in markers:
     for case in cases:
         for level in levels:
              for i in range(ids):
-
-                fileName = '%s%s_%s_lvl%s_%s.png'%(dataDir,case,marker,level,i+1)
+                fileName = '%s%s_%s_lvl%s_%s.png'%(dataDir,case,marker.replace(' ','-'),level,i+1)
                 try:
                     im = (plt.imread(fileName)[:,:,0]<1).astype(np.float32)
                 except: continue
-                
                 f = open("../fibers/summary.txt", "a")
                 f.write('\n\nFound: %s_%s_lvl%s_%s'%(case,marker,level,i+1))
                 f.write('\t\tNumber of Fiber Pixels: %d'%np.sum(im))

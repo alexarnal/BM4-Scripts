@@ -28,13 +28,13 @@ def getCoordsFromSVG(fileName):
         X.append(float(coord[0]))
         Y.append(-float(coord[1]))
     coords = np.vstack((np.array(X), np.array(Y))).T
-    return coords, np.array(viewBox[1].split(' '), dtype='float')
+    return coords, np.array(viewBox.group(1).split(' '), dtype='float')
 
 def getProjectDetails(path):
     myDictionary = {}
     file = open(path,"r")
     for line in file:
-        fields = [x.replace(' ','').replace('\n','') for x in line.split(",")]
+        fields = [x.replace('\n','') for x in line.split(",")] #.replace(' ','')
         myDictionary[fields[0]]=fields[1:]
     file.close()
     print("\nProject Details:")
@@ -68,7 +68,6 @@ for marker in markers:
     for case in cases:
         for level in levels:
              for i in range(ids):
-
                 fileName = '%s%s_%s_lvl%s_%s-01.svg'%(dataDir,case,marker,level,i+1)
                 try:
                     coordinates, viewBox = getCoordsFromSVG(fileName)

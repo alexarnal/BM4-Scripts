@@ -46,7 +46,7 @@ def getCoordsFromSVG(fileName):
         Y.append(-float(coord[1]))
     
     coords = np.vstack((np.array(X), np.array(Y))).T
-    return coords, np.array(viewBox[1].split(' '), dtype='float')
+    return coords, np.array(viewBox.group(1).split(' '), dtype='float')
 
 def cellLocations(coordinates,viewBox, scaleFactor):
     #first remove duplicates
@@ -66,21 +66,27 @@ def cellLocations(coordinates,viewBox, scaleFactor):
             continue
     return canvas
 
-def choropleth(regionShapes, cells, scale):
+def choropleth(regionShapes, fibers, scale, normalized_by_region_area=False):
     vals = np.zeros(len(regionShapes))
     areas = np.zeros(len(regionShapes))
     mapa = np.zeros(regionShapes[0].shape[0:2])
-    for i in range(len(regionShapes)):
-        vals[i] = np.sum(cells[regionShapes[i]])*scale
-        areas[i] = np.sum(regionShapes[i])*scale
-        mapa[regionShapes[i]] = vals[i]
+    if normalized_by_region_area:
+        for i in range(len(regionShapes)):
+            vals[i] = np.sum(fibers[regionShapes[i]])/np.sum(regionShapes[i])
+            areas[i] = np.sum(regionShapes[i])*scale /np.sum(regionShapes[i])
+            mapa[regionShapes[i]] = vals[i]
+    else:
+        for i in range(len(regionShapes)):
+            vals[i] = np.sum(fibers[regionShapes[i]])*scale
+            areas[i] = np.sum(regionShapes[i])*scale
+            mapa[regionShapes[i]] = vals[i]
     return mapa, vals, areas
 
-def write(outDir,level,case,marker,vals,areas,brainRegionNames,replicate):
+def write(outDir,level,case,marker,vals,areas,brainRegionNames,replicate, metric_scale,n):
     if n == 0: 
         f = open(outDir+"lvl%s.csv"%level, "w")
         f.writelines(['level,case,replicate,peptide,',','.join(brainRegionNames), '\n'])
-        f.writelines([',,,,',','.join(areas.astype('str').tolist()), '\n'])
+        f.writelines(['metric_scale,%s,,,'%(metric_scale),','.join(areas.astype('str').tolist()), '\n'])
     else:
         f = open(outDir+"lvl%s.csv"%level, "a")
         l = [level + ',' + case + ',' + replicate + ',' + marker + ',' , ','.join(vals.astype('str').tolist()), '\n']
@@ -91,14 +97,23 @@ def getRegions(lvl, regionType):
     directory = '../%s/'%(regionType)
     names=os.listdir(directory)
     regionShapes = []
+    regionSizes = []
     regionNames = []
     for name in names:
         if "lvl"+lvl not in name: continue
         try:
-            regionShapes.append(plt.imread(directory+name)[:,:,0]<0.5)
+            x = plt.imread(directory+name)[:,:,0]<0.5
         except: continue
+        regionShapes.append(x)
+        regionSizes.append(np.sum(x))
         regionNames.append(name[6:-4]) #remove lvlNum and .png
-    return regionShapes, regionNames 
+    indxs = np.argsort(np.array(regionSizes))
+    sortedNames = []
+    sortedShape = []
+    for indx in indxs[::-1]:
+        sortedNames.append(regionNames[indx])
+        sortedShape.append(regionShapes[indx])
+    return sortedShape, sortedNames 
 
 def setUpFolders(directory):
     try:
@@ -134,7 +149,7 @@ def getProjectDetails(path):
     myDictionary = {}
     file = open(path,"r")
     for line in file:
-        fields = [x.replace(' ','').replace('\n','') for x in line.split(",")]
+        fields = [x.replace('\n','') for x in line.split(",")] #.replace(' ','')
         myDictionary[fields[0]]=fields[1:]
     file.close()
     print("\nProject Details:")
@@ -147,6 +162,9 @@ projectDetails = getProjectDetails("projectDetails.csv")
 levels = projectDetails['levels']
 markers = projectDetails['markers']
 cases = projectDetails['cases']
+scaleFactor = 6
+metricScale = 1 # we want every pixel to be equal to 1 so if we add the number of pixels, we get the count of each cell
+normalize_by_area = True
 
 #Directory to Fiber Data Set Up
 dataDir='../appositions/raw/'
@@ -156,8 +174,7 @@ setUpFolders(outDir)
 #Generate brain-region-wise count tables and choropleth maps for each SVG file
 print('\nGenerating brain-region-wise count tables and choropleth maps for each SVG file.')
 ids = len(markers)*len(cases)
-scaleFactor = 6
-metricScale = 1 # we want every pixel to be equal to 1 so if we add the number of pixels, we get the count of each cell
+nSVG = 0
 for level in levels:
     n = 0
     print('Getting Brain Regions for Level %s'%level)
@@ -171,11 +188,12 @@ for level in levels:
                     coordinates, viewBox = getCoordsFromSVG(fileName)
                 except: continue
                 cells = cellLocations(coordinates,viewBox,scaleFactor)
-                mapa, vals, areas= choropleth(brainRegionShapes, cells, metricScale)
-                write(outDir+"perBrainRegion/",level,case,marker,vals,areas,brainRegionNames,str(i+1))
-                np.save("%sperBrainRegion/individual/%s_%s_lvl%s_%s"%(outDir,case,marker,level,i+1),mapa)
+                mapa, vals, areas= choropleth(brainRegionShapes, cells, metricScale,normalize_by_area)
+                write(outDir+"perBrainRegion/",level,case,marker,vals,areas,brainRegionNames,str(i+1), metricScale,n)
+                np.save("%sperBrainRegion/individual/%s_%s_lvl%s_%s"%(outDir,case,marker,level,i+1),mapa.astype('float32'))
                 n += 1
-print('\tFinished generating brain-region-wise count tables and choropleth maps for %d SVG individual files.'%n) 
+                nSVG+=1
+print('\tFinished generating brain-region-wise count tables and choropleth maps for %d SVG individual files.'%nSVG) 
 
 #Generate brain-region-wise average choropleths for each level using all maps generated ^
 print('\nGenerating brain-region-wise average choropleths for each level using all maps generated ^')
@@ -199,18 +217,19 @@ for marker in markers:
         densities.append(density)
     for i, den in enumerate(densities):
         print('%s\t%s'%(np.max(den),peek))
-        plt.imsave('%sperBrainRegion/average/%s_lvl%s_%s.png'%(outDir, marker, levels[i],np.max(den)),den,cmap=newCM)
+        plt.imsave('%sperBrainRegion/average/%s_lvl%s_%s.png'%(outDir, marker, levels[i],np.max(den)),den.astype('float32'),cmap=newCM, vmin=0, vmax=peek)
         n+=1
 print('\n\tFinished generating %d brain-region-wise average choropleth maps.'%n)  
 
 #Generate grid-region-wise count tables and choropleth maps for each SVG file
 print('\nGenerating grid-region-wise count tables and choropleth maps for each SVG file.')
 ids = len(markers)*len(cases)
-n = 0
+nSVG = 0
 for level in levels:
+    n = 0
     print('Getting Grid Regions for Level %s'%level)
     brainRegionShapes, brainRegionNames = getRegions(level,"gridRegions")
-    print('Analyzing All Cases & Markers Per Grid Region')
+    print('Analyzing All Cases & Markers Per Grid Region') 
     for case in cases:
         for marker in markers:
             for i in range(ids):
@@ -219,11 +238,12 @@ for level in levels:
                     coordinates, viewBox = getCoordsFromSVG(fileName)
                 except: continue
                 cells = cellLocations(coordinates,viewBox,scaleFactor)
-                mapa, vals, areas= choropleth(brainRegionShapes, cells, metricScale)
-                write(outDir+"perGridRegion/",level,case,marker,vals,areas,brainRegionNames,str(i+1))
-                np.save("%sperGridRegion/individual/%s_%s_lvl%s_%s"%(outDir,case,marker,level,i+1),mapa)
+                mapa, vals, areas= choropleth(brainRegionShapes, cells, metricScale, normalize_by_area)
+                write(outDir+"perGridRegion/",level,case,marker,vals,areas,brainRegionNames,str(i+1),metricScale,n)
+                np.save("%sperGridRegion/individual/%s_%s_lvl%s_%s"%(outDir,case,marker,level,i+1),mapa.astype('float32'))
                 n += 1
-print('\tFinished generating grid-region-wise count tables and choropleth maps for %d SVG individual files.'%n) 
+                nSVG+=1
+print('\tFinished generating grid-region-wise count tables and choropleth maps for %d SVG individual files.'%nSVG) 
 
 #Generate grid-region-wise average choropleths for each level using all maps generated ^
 print('\nGenerating grid-region-wise average choropleths for each level using all maps generated ^')
@@ -247,7 +267,7 @@ for marker in markers:
         densities.append(density)
     for i, den in enumerate(densities):
         print('%s\t%s'%(np.max(den),peek))
-        plt.imsave('%sperGridRegion/average/%s_lvl%s_%s.png'%(outDir, marker, levels[i],np.max(den)),den,cmap=newCM)
+        plt.imsave('%sperGridRegion/average/%s_lvl%s_%s.png'%(outDir, marker, levels[i],np.max(den)),den.astype('float32'),cmap=newCM, vmin=0, vmax=peek)
         n+=1
 print('\n\tFinished generating %d grid-region-wise average choropleth maps.'%n)  
 
