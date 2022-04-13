@@ -167,7 +167,7 @@ for level in levels:
                     np.save("%sperBrainRegion/individual/%s_%s_lvl%s_%s"%(outDir,case,marker,level,i+1),mapa.astype('float32'))
                 n += 1
                 nPNG+=1
-print('\tFinished processing %d PNG individual files.'%nPNG) 
+print('\tFinished processing %d PNG individual files.'%nPNG)
 
 #Generate brain-region-wise average choropleths for each level using all maps generated ^
 if normalize_by_area:
@@ -223,7 +223,7 @@ for level in levels:
                     np.save("%sperGridRegion/individual/%s_%s_lvl%s_%s"%(outDir,case,marker,level,i+1),mapa.astype('float32'))
                 n += 1
                 nPNG+=1
-print('\tFinished processing %d PNG individual files.'%nPNG) 
+print('\tFinished processing %d PNG individual files.'%nPNG)
 
 #Generate grid-region-wise average choropleths for each level using all maps generated ^
 if normalize_by_area:

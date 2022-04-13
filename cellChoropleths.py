@@ -196,7 +196,7 @@ for level in levels:
                     np.save("%sperBrainRegion/individual/%s_%s_lvl%s_%s"%(outDir,case,marker,level,i+1),mapa.astype('float32'))
                 n += 1
                 nSVG+=1
-print('\tFinished processing %d SVG individual files.'%nSVG) 
+print('\tFinished processing %d SVG individual files.'%nSVG)
 
 #Generate brain-region-wise average choropleths for each level using all maps generated ^
 if normalize_by_area:
@@ -225,7 +225,7 @@ if normalize_by_area:
             print('%s\t%s'%(np.max(den),peek))
             plt.imsave('%sperBrainRegion/average/%s_lvl%s_%s.png'%(outDir, marker, levels[i],np.max(den)),den.astype('float32'),cmap=newCM, vmin=0, vmax=peek)
             n+=1
-    print('\n\tFinished generating %d brain-region-wise average choropleth maps.'%n) 
+    print('\n\tFinished generating %d brain-region-wise average choropleth maps.'%n)
 
 #Process each SVG file grid-region-wise 
 if normalize_by_area: print('\nGenerating choropleth maps of counts normalized by grid region area for each SVG file.')
@@ -252,7 +252,7 @@ for level in levels:
                     np.save("%sperGridRegion/individual/%s_%s_lvl%s_%s"%(outDir,case,marker,level,i+1),mapa.astype('float32'))
                 n += 1
                 nSVG+=1
-print('\tFinished generating grid-region-wise count tables and choropleth maps for %d SVG individual files.'%nSVG) 
+print('\tFinished generating grid-region-wise count tables and choropleth maps for %d SVG individual files.'%nSVG)
 
 
 #Generate grid-region-wise average choropleths for each level using all maps generated ^
@@ -282,6 +282,6 @@ if normalize_by_area:
             print('%s\t%s'%(np.max(den),peek))
             plt.imsave('%sperGridRegion/average/%s_lvl%s_%s.png'%(outDir, marker, levels[i],np.max(den)),den.astype('float32'),cmap=newCM, vmin=0, vmax=peek)
             n+=1
-    print('\n\tFinished generating %d grid-region-wise average choropleth maps.'%n)  
+    print('\n\tFinished generating %d grid-region-wise average choropleth maps.'%n) 
 
 print("Done!")
