@@ -1,7 +1,54 @@
 /*
-starting video: https://www.youtube.com/watch?v=EGdgrP7azUQ
-export png spects: https://ai-scripting.docsforadobe.dev/jsobjref/ExportOptionsPNG8/
-export svg spects: https://community.adobe.com/t5/illustrator/svg-export-only-visible-layers/m-p/8820328
+ * Illustrator Export Script for Neuroscience Imaging Data
+ * 
+ * Description:
+ * This script automates the export of neuroanatomical data from Adobe Illustrator files
+ * to various image formats (PNG and SVG) for further analysis and visualization in 
+ * neuroscience research. It is designed to process multilayered Illustrator documents 
+ * containing different types of neuronal structures.
+ * 
+ * Functionality:
+ * 1. Exports fiber data as PNG8 images
+ * 2. Exports cell body data as SVG files
+ * 3. Exports apposition data as SVG files
+ * 4. Processes multiple layers and sublayers based on specified peptide markers
+ * 5. Maintains original layer structure and visibility
+ * 6. Reads project-specific details from an external CSV file
+ * 
+ * Usage:
+ * 1. Open the target Illustrator file
+ * 2. Ensure the `projectDetails.csv` file is present in the `scripts` folder
+ * 3. Run the script from within Adobe Illustrator
+ * 
+ * Requirements:
+ * - Adobe Illustrator CS6 or later
+ * - Properly structured Illustrator file with layers named according to peptide markers
+ * - `projectDetails.csv` file in the `scripts` folder containing project-specific information
+ * 
+ * Output Structure:
+ * The script generates the following folder structure relative to the Illustrator file:
+ * - ../fibers/raw/: Contains exported PNG8 images of fiber data
+ * - ../cells/raw/: Contains exported SVG files of cell body data
+ * - ../appositions/raw/: Contains exported SVG files of apposition data
+ * 
+ * File Naming:
+ * Exported files are named using the following convention:
+ * [first 6 characters of layer name]_[peptide marker]_lvl[level number]_[layer index].[extension]
+ * 
+ * Notes:
+ * - The script assumes specific layer naming conventions and structure
+ * - Fiber data is exported with black stroke color and 0.3 pt width for consistency
+ * - SVG exports use optimized settings for web compatibility
+ * 
+ * Useful links (not my own):
+ * - adobe scripting tutorial: https://www.youtube.com/watch?v=EGdgrP7azUQ
+ * - export svg spects: https://community.adobe.com/t5/illustrator/svg-export-only-visible-layers/m-p/8820328
+ *
+ * Author: Alexandro Arnal
+ * Version: 1.0
+ * Date: Sept 30, 2024
+ * 
+ * This script is part of the data processing pipeline for Navarro et al. 2024.
 */
 
 //Function definitions
